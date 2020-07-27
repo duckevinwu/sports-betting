@@ -149,6 +149,10 @@ function getTimeFromDate(d) {
   var localeSpecificTime = d.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute:'2-digit'});
   var formattedDate = localeSpecificTime.replace(/ +/g, "").toLowerCase();
 
+  if (formattedDate[0] === '0') {
+    formattedDate = formattedDate.substring(1);
+  }
+
   return formattedDate;
 }
 
