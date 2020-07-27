@@ -40,6 +40,11 @@ app.get('/people', routes.getAllPeople);
 // TODO: (2) - Add route '/friends/:login' for the functionality of FindFriends page
 app.get('/friends/:login', routes.getFriends); // Hint: Replace () => {} with the appropriate route handler in routes.js.
 
+// ---------------- Generate email ------------------------
+app.get('/api/generateemail', routes.generateEmail);
+
+
+
 // Register
 app.post('/register', function(req, res, next) {
   passport.authenticate('local-register', function(err, user, info) {
@@ -89,6 +94,17 @@ app.get('/auth/isAuthenticated', function(req, res) {
     return res.status(200).send({ authenticated: 'true', user: req.user})
   }
   return res.status(401).send({ authenticated: 'false', user: req.user })
+});
+
+// check if user is an admin
+app.get('/auth/isAdmin', function(req, res) {
+  if (req.isAuthenticated()) {
+    // if admin flag is true
+    if (req.user.admin === 1) {
+      return res.send({authenticated: 'true'});
+    }
+  }
+  return res.send({authenticated: 'false'});
 });
 
 // Connects React app with Express server in production

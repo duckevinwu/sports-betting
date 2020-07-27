@@ -8,6 +8,8 @@ import Test from './Test';
 import LoginWrapper from './LoginWrapper';
 import RegisterWrapper from './RegisterWrapper';
 import Profile from './Profile';
+import AdminRoute from './AdminRoute';
+import SendEmail from './SendEmail';
 
 export default class App extends React.Component {
 
@@ -20,13 +22,6 @@ export default class App extends React.Component {
 							exact
 							path="/"
 
-						/>
-						<Route
-							exact
-							path="/dashboard"
-							render={() => (
-								<Test />
-							)}
 						/>
 						<Route
 							exact
@@ -47,6 +42,13 @@ export default class App extends React.Component {
 							path="/profile"
 							render={() => (
 								<Profile />
+							)}
+						/>
+						<Route
+							exact
+							path="/sendemail"
+							render={() => (
+								<AdminRoute success={<SendEmail/>} fail={<LoginWrapper/>}/>
 							)}
 						/>
 					</Switch>
