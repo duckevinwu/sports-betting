@@ -43,6 +43,11 @@ app.get('/friends/:login', routes.getFriends); // Hint: Replace () => {} with th
 // ---------------- Generate email ------------------------
 app.get('/api/generateemail', routes.generateEmail);
 
+// ---------------- Email Signup --------------------------
+app.post('/api/emailsignup', routes.emailSignup);
+
+// --------------- submit bet -----------------------------
+app.post('/api/submitbet', routes.submitBet);
 
 
 // Register

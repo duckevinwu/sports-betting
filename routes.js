@@ -1,5 +1,8 @@
 // Code below for testing in production
 
+// read .env file config
+require('dotenv').config();
+
 var config = {
   host: process.env.HOST,
   user: process.env.USER,
@@ -10,6 +13,7 @@ var config = {
 const axios = require("axios");
 const cheerio = require("cheerio");
 var mysql = require('mysql');
+var randToken = require('rand-token');
 
 config.connectionLimit = 10;
 var connection = mysql.createPool(config);
@@ -73,9 +77,12 @@ function scrapeSchedule(callback) {
 
         var gameObj = {};
 
+        gameObj.id = 'game' + i;
+
         var gameDate = $('.event-card-header span', game).data('value');
         var gameDateObject = new Date(gameDate);
 
+        gameObj.utc = gameDate;
         gameObj.time = getTimeFromDate(gameDateObject);
 
         var spreadArr = $('[data-field="current-spread"]', game);
@@ -102,6 +109,7 @@ function scrapeSchedule(callback) {
         games.push(gameObj);
       });
 
+      saveGames(games);
       callback(games);
 
     })
@@ -114,6 +122,37 @@ function scrapeSchedule(callback) {
     });
 }
 
+// save the games into the database
+function saveGames(gamesArr) {
+
+  var date = getCurrDate();
+  var league = 'nba';
+  var games = JSON.stringify(gamesArr);
+
+  var checkQuery = `
+    SELECT *
+    FROM Games
+    WHERE date = ? AND league = ?
+  `;
+  connection.query(checkQuery, [date, league], function(err, rows, fields) {
+    if (err) console.log(err);
+    else {
+      if (!rows.length) {
+        var insertQuery = `
+          INSERT INTO Games (date, league, games)
+          VALUES (?, ?, ?)
+        `;
+        connection.query(insertQuery, [date, league, games], function(err, rows, fields) {
+          if (err) console.log(err);
+          else {
+            console.log('success');
+          }
+        });
+      }
+    }
+  });
+}
+
 function convertSpread(s) {
   var newSpread = 0.0 - parseFloat(s);
   if (newSpread >= 0) {
@@ -123,14 +162,12 @@ function convertSpread(s) {
   }
 }
 
-
-
 function getCurrDate() {
   var date = new Date();
 
   var year = date.getFullYear();
   var month = date.getMonth()+1;
-  var day = date.getDate()+4;
+  var day = date.getDate()+3;
 
   if (day < 10) {
     day = '0' + day;
@@ -157,44 +194,56 @@ function getTimeFromDate(d) {
 }
 
 function abbToName(s) {
+  // var map = {
+  //   ATL:	'Atlanta Hawks',
+  //   BKN:	'Brooklyn Nets',
+  //   BOS:	'Boston Celtics',
+  //   CHA:	'Charlotte Hornets',
+  //   CHI:	'Chicago Bulls',
+  //   CLE:	'Cleveland Cavaliers',
+  //   DAL:	'Dallas Mavericks',
+  //   DEN:	'Denver Nuggets',
+  //   DET:	'Detroit Pistons',
+  //   GS:	'Golden State Warriors',
+  //   HOU:	'Houston Rockets',
+  //   IND:	'Indiana Pacers',
+  //   LAC:	'Los Angeles Clippers',
+  //   LAL:	'Los Angeles Lakers',
+  //   MEM:	'Memphis Grizzlies',
+  //   MIA:	'Miami Heat',
+  //   MIL:	'Milwaukee Bucks',
+  //   MIN:	'Minnesota Timberwolves',
+  //   NO:	  'New Orleans Pelicans',
+  //   NY:	'New York Knicks',
+  //   OKC:	'Oklahoma City Thunder',
+  //   ORL:	'Orlando Magic',
+  //   PHI:	'Philadelphia 76ers',
+  //   PHO:	'Phoenix Suns',
+  //   POR:	'Portland Trail Blazers',
+  //   SAC:	'Sacramento Kings',
+  //   SA:	'San Antonio Spurs',
+  //   TOR:	'Toronto Raptors',
+  //   UTA:	'Utah Jazz',
+  //   WAS:	'Washington Wizards'
+  // }
   var map = {
-    ATL:	'Atlanta Hawks',
-    BKN:	'Brooklyn Nets',
-    BOS:	'Boston Celtics',
-    CHA:	'Charlotte Hornets',
-    CHI:	'Chicago Bulls',
-    CLE:	'Cleveland Cavaliers',
-    DAL:	'Dallas Mavericks',
-    DEN:	'Denver Nuggets',
-    DET:	'Detroit Pistons',
-    GS:	'Golden State Warriors',
-    HOU:	'Houston Rockets',
-    IND:	'Indiana Pacers',
-    LAC:	'Los Angeles Clippers',
-    LAL:	'Los Angeles Lakers',
-    MEM:	'Memphis Grizzlies',
-    MIA:	'Miami Heat',
-    MIL:	'Milwaukee Bucks',
-    MIN:	'Minnesota Timberwolves',
-    NO:	  'New Orleans Pelicans',
-    NY:	'New York Knicks',
-    OKC:	'Oklahoma City Thunder',
-    ORL:	'Orlando Magic',
-    PHI:	'Philadelphia 76ers',
-    PHO:	'Phoenix Suns',
-    POR:	'Portland Trail Blazers',
-    SAC:	'Sacramento Kings',
-    SA:	'San Antonio Spurs',
-    TOR:	'Toronto Raptors',
-    UTA:	'Utah Jazz',
-    WAS:	'Washington Wizards'
+    GS:	  'GSW',
+    NO:	  'NOP',
+    NY:	  'NYK',
+    PHO:  'PHX',
+    SA:	  'SAS'
   }
 
-  return map[s];
+  if (map[s]) {
+    return map[s];
+  }
+
+  return s;
 }
 
 function teamImage(s) {
-  return abbToName(s).replace(/ /g, '-').toLowerCase();
+  // return abbToName(s).replace(/ /g, '-').toLowerCase();
+  return abbToName(s);
 }
 
 function generateEmail(req, res) {
@@ -236,8 +285,8 @@ function generateEmail(req, res) {
     for (var i = 0; i < games.length; i++) {
       var currGame = games[i];
 
-      var team1 = currGame.team1;
-      var team2 = currGame.team2;
+      var team1 = abbToName(currGame.team1);
+      var team2 = abbToName(currGame.team2);
       var gameTime = currGame.time;
 
       var team1Image = teamImage(team1);
@@ -268,7 +317,7 @@ function generateEmail(req, res) {
               <tr>
                 <td>
 
-                  <img src="http://loodibee.com/wp-content/uploads/nba-${team1Image}-logo-300x300.png" width="50px" height="50px"></img>
+                  <img src="https://www.nba.com/assets/logos/teams/primary/web/${team1Image}.svg" width="50px" height="50px"></img>
 
                 </td>
               </tr>
@@ -283,7 +332,7 @@ function generateEmail(req, res) {
               <tr>
                 <td>
 
-                  <img src="http://loodibee.com/wp-content/uploads/nba-${team2Image}-logo-300x300.png" width="50px" height="50px"></img>
+                  <img src="https://www.nba.com/assets/logos/teams/primary/web/${team2Image}.svg" width="50px" height="50px"></img>
 
                 </td>
               </tr>
@@ -312,9 +361,128 @@ function generateEmail(req, res) {
 // --------------------------------------------------------------
 // --------------------------------------------------------------
 
+// signup
+function emailSignup(req, res) {
+  var email = req.body.email;
+  var nickname = req.body.nickname;
+
+  // check if user with that email exists
+  var existsQuery = `
+    SELECT *
+    FROM Player
+    WHERE email = ?;
+  `;
+  connection.query(existsQuery, [email],  function(err, rows, fields) {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    if (rows.length) {
+      // user already exists
+      return res.send({status: 'fail', message: 'user already exists'});
+    } else {
+      var token = randToken.generate(16);
+
+      var query = `
+        INSERT INTO Player (email, token, nickname)
+        VALUES (?, ?, ?);
+      `;
+      connection.query(query, [email, token, nickname], function(err, rows, fields) {
+        if (err) console.log(err);
+        else {
+          return res.send({status: 'success'})
+        }
+      });
+    }
+  });
+}
+
+// submit bet
+function submitBet(req, res) {
+  var params = req.body.params;
+  var email = params.email;
+  var pId = params.id;
+  var date = getCurrDate();
+  var league = 'nba';
+
+  var prevSlip = {};
+
+  // check to see if player has bet already
+  var prevQuery = `
+    SELECT slip
+    FROM Bet
+    WHERE player = ?
+  `;
+  connection.query(prevQuery, [pId], function(err, rows, fields) {
+    if (err) console.log(err);
+    else {
+      if (rows.length) {
+        prevSlip = JSON.parse(rows[0].slip);
+      }
+
+      // get today's games
+      var gamesQuery = `
+        SELECT games
+        FROM Games
+        WHERE date = ? AND league = ?
+      `;
+
+      connection.query(gamesQuery, [date, league], function(err1, rows1, fields1) {
+        if (err1) console.log(err1);
+        else {
+          if (!rows1.length) {
+            return res.send({message: 'no games today'})
+          } else {
+
+            // today's games
+            var games = JSON.parse(rows1[0].games);
+
+            games.forEach(function(game) {
+              if ((new Date()) > game.utc) {
+                return true;
+              } else {
+                var gameId = game.id;
+
+                if (params[gameId]) {
+                  prevSlip[gameId] = params[gameId];
+                }
+              }
+
+            });
+
+            prevSlip = JSON.stringify(prevSlip);
+
+            // insert/update the bet in table
+            var insertQuery = `
+              INSERT INTO Bet (player, date, slip)
+              VALUES (?, ?, ?)
+              ON DUPLICATE KEY UPDATE date = VALUES(date), slip = VALUES(slip)
+            `;
+
+            connection.query(insertQuery, [pId, date, prevSlip], function(err2, rows2, fields2) {
+              if (err2) {
+                console.log(err2);
+                return res.send({status: 'fail', message: 'failed inserting new bet'});
+              } else {
+                return res.send({status: 'success'})
+              }
+            })
+
+
+          }
+        }
+      })
+
+    }
+  });
+
+}
+
 // The exported functions, which can be accessed in index.js.
 module.exports = {
   getAllPeople: getAllPeople,
   getFriends: getFriends,
-  generateEmail: generateEmail
+  generateEmail: generateEmail,
+  emailSignup: emailSignup,
+  submitBet: submitBet
 }

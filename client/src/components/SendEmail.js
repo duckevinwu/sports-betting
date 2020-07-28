@@ -10,6 +10,7 @@ export default class SendEmail extends React.Component {
     }
 
     this.generateEmail = this.generateEmail.bind(this);
+    this.sendEmail = this.sendEmail.bind(this);
   }
 
   componentDidMount() {
@@ -32,6 +33,10 @@ export default class SendEmail extends React.Component {
 		});
   }
 
+  sendEmail() {
+
+  }
+
   render() {
     return (
       <div>
@@ -39,6 +44,7 @@ export default class SendEmail extends React.Component {
         <hr/>
           <div dangerouslySetInnerHTML={{__html: this.state.preview}}/>
         <hr/>
+        <button onClick={this.sendEmail}>Send Email</button>
       </div>
     );
   }

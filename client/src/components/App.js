@@ -10,6 +10,8 @@ import RegisterWrapper from './RegisterWrapper';
 import Profile from './Profile';
 import AdminRoute from './AdminRoute';
 import SendEmail from './SendEmail';
+import LandingPage from './LandingPage';
+import SubmitBet from './SubmitBet';
 
 export default class App extends React.Component {
 
@@ -21,7 +23,9 @@ export default class App extends React.Component {
 						<Route
 							exact
 							path="/"
-
+							render={() => (
+								<LandingPage/>
+							)}
 						/>
 						<Route
 							exact
@@ -49,6 +53,13 @@ export default class App extends React.Component {
 							path="/sendemail"
 							render={() => (
 								<AdminRoute success={<SendEmail/>} fail={<LoginWrapper/>}/>
+							)}
+						/>
+						<Route
+							exact
+							path="/submitbet"
+							render={() => (
+								<SubmitBet />
 							)}
 						/>
 					</Switch>

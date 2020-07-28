@@ -34,7 +34,6 @@ class Login extends React.Component {
 
   submitLogin(e) {
     e.preventDefault();
-    console.log(this.state);
 
     fetch("/login", {
       method: "post",
