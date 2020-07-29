@@ -49,6 +49,9 @@ app.post('/api/emailsignup', routes.emailSignup);
 // --------------- submit bet -----------------------------
 app.post('/api/submitbet', routes.submitBet);
 
+// ----------------- calculate rank ------------------------
+app.get('/api/calculaterank', routes.calculateRank);
+
 
 // Register
 app.post('/register', function(req, res, next) {

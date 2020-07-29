@@ -9,12 +9,26 @@ export default class SendEmail extends React.Component {
       preview: ""
     }
 
+    this.calculateRank = this.calculateRank.bind(this);
     this.generateEmail = this.generateEmail.bind(this);
     this.sendEmail = this.sendEmail.bind(this);
   }
 
   componentDidMount() {
 
+  }
+
+  calculateRank() {
+    fetch("/api/calculaterank",
+		{
+			method: "GET"
+		}).then(res => {
+			return res.json();
+		}, err => {
+			console.log(err);
+		}).then(data => {
+      console.log(data)
+		});
   }
 
   generateEmail() {
@@ -40,6 +54,8 @@ export default class SendEmail extends React.Component {
   render() {
     return (
       <div>
+        <button onClick={this.calculateRank}>Calculate Leaderboard</button>
+        <br/>
         <button onClick={this.generateEmail}>Generate Email</button>
         <hr/>
           <div dangerouslySetInnerHTML={{__html: this.state.preview}}/>

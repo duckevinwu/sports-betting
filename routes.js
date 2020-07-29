@@ -79,7 +79,7 @@ function scrapeSchedule(callback) {
 
         gameObj.id = 'game' + i;
 
-        var gameDate = $('.event-card-header span', game).data('value');
+        var gameDate = $('.event-card-header [data-role="localtime"]', game).data('value');
         var gameDateObject = new Date(gameDate);
 
         gameObj.utc = gameDate;
@@ -475,8 +475,182 @@ function submitBet(req, res) {
 
     }
   });
-
 }
+
+// ----------------------------------------------------------
+// ---------------- UPDATE LEADERBOARD ----------------------
+// ----------------------------------------------------------
+
+function getDateYesterday() {
+  return '2020-02-05';
+}
+
+
+
+function scrapeResults(callback) {
+
+  var yesterday = getDateYesterday();
+
+  axios.get('https://www.scoresandodds.com/nba?date=' + yesterday)
+    .then(function (response) {
+      // handle success
+      var pageData = response.data
+      // console.log(response.data)
+      const $ = cheerio.load(pageData)
+
+      var games = [];
+
+      $('.event-card-table').each((i, game) => {
+
+        var gameObj = {};
+
+        gameObj.id = 'game' + i;
+
+        var spreadArr = $('[data-field="current-spread"]', game);
+        var side = spreadArr.data('side');
+
+        var spread = $('.data-value', spreadArr).text().trim();
+
+        if (side === 'away') {
+          gameObj.spread1 = spread;
+          gameObj.spread2 = convertSpread(spread);
+        } else {
+          gameObj.spread1 = convertSpread(spread);
+          gameObj.spread2 = spread;
+        }
+
+        var teamArr = $('.team-emblem', game);
+
+        var team1 = $(teamArr[0]).text();
+        var team2 = $(teamArr[1]).text();
+
+        gameObj.team1 = team1;
+        gameObj.team2 = team2;
+
+        var result = $('[data-side="away"] .event-card-score', game);
+        var team1Win = $(result).hasClass('win');
+
+        if (team1Win) {
+          gameObj.winner = team1;
+        } else {
+          gameObj.winner = team2;
+        }
+
+        games.push(gameObj);
+      });
+
+      callback(games);
+
+    })
+    .catch(function (error) {
+      // handle error
+      console.log(error);
+    })
+    .then(function () {
+      // always executed
+    });
+}
+
+// calculate the score for each person based on bets yesterday
+function calculateRank(req, res) {
+
+  var yesterday = getDateYesterday();
+  var scores = [];
+
+  scrapeResults(function (results) {
+
+    var playersQuery = `
+      SELECT *
+      FROM Player p LEFT JOIN (SELECT * FROM Bet WHERE date = ?) b ON p.player_id = b.player
+    `;
+
+    connection.query(playersQuery, [yesterday], function(err, rows, fields) {
+      if (err) {
+        return res.send({status: 'fail', message: err})
+      } else {
+        var playerList = rows;
+
+        playerList.forEach(function(player) {
+          var pScore = {
+            id: player.player_id,
+            score: 0.0
+          };
+
+          if (!(player.slip)) {
+            // didn't submit bets yesterday
+            scores.push(pScore);
+            return true;
+          }
+
+          var pSlip = JSON.parse(player.slip);
+          var total = 0.0;
+
+          results.forEach(function(game) {
+            var pSelection = pSlip[game.id];
+            if (pSelection) {
+              if (pSelection === game.winner) {
+                var spread = parseFloat(game.spread1);
+                if (game.winner !== game.team1) {
+                  spread = parseFloat(game.spread2);
+                }
+
+                // calculate total
+                if (spread <= 0) {
+                  // favorite
+                  spread = Math.abs(spread);
+                  var favScore = Math.max((6.0 - (0.1 * spread) - (0.1 * Math.pow(spread, 2))), 0.1);
+                  total += favScore;
+                } else {
+                  spread = Math.abs(spread);
+                  total += (6.0 + (0.1 * Math.pow(spread, 2)));
+                }
+
+              }
+            }
+          })
+
+          pScore.score = total;
+          scores.push(pScore);
+
+        });
+
+        // after all scores are calculated, sort them
+        scores.sort(function(a, b){return b.score - a.score});
+
+        // iterate through scores array and generate query
+        var rankDate = (new Date(yesterday)).getTime();
+        var values = [];
+
+        for (var i = 0; i < scores.length; i++) {
+          var currScore = scores[i];
+          var currVal = [];
+
+          currVal[0] = currScore.id;
+          currVal[1] = rankDate;
+          currVal[2] = currScore.score;
+          currVal[3] = i + 1;
+
+          values.push(currVal);
+        }
+
+        var insertQuery = "INSERT INTO `Rank` (player, date, score, rank) VALUES ?";
+
+        // run the query on the db
+        connection.query(insertQuery, [values], function(err1, rows1, fields1) {
+          if (err1) {
+            console.log(err1);
+            return res.send({status: 'fail', message: 'insertion failed'});
+          } else {
+            return res.send({status: 'success'});
+          }
+        })
+
+      }
+    })
+
+  })
+}
+
 
 // The exported functions, which can be accessed in index.js.
 module.exports = {
@@ -484,5 +658,6 @@ module.exports = {
   getFriends: getFriends,
   generateEmail: generateEmail,
   emailSignup: emailSignup,
-  submitBet: submitBet
+  submitBet: submitBet,
+  calculateRank: calculateRank
 }

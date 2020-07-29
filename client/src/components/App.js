@@ -52,7 +52,7 @@ export default class App extends React.Component {
 							exact
 							path="/sendemail"
 							render={() => (
-								<AdminRoute success={<SendEmail/>} fail={<LoginWrapper/>}/>
+								<AdminRoute success={<SendEmail/>} fail={<SendEmail/>}/>
 							)}
 						/>
 						<Route
