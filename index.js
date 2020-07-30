@@ -52,6 +52,18 @@ app.post('/api/submitbet', routes.submitBet);
 // ----------------- calculate rank ------------------------
 app.get('/api/calculaterank', routes.calculateRank);
 
+// ----------------- validate email and token --------------
+app.get('/auth/validateuser/:email/:token', routes.validateUser);
+
+// ----------------- unsubscribe ---------------------------
+app.post('/api/unsubscribe', routes.unsubscribe);
+
+// ----------------- get today's games ---------------------
+app.get('/api/getgames', routes.getGames);
+
+// ----------------- send all emails ------------------------
+app.get('/api/sendemail', routes.sendEmail);
+
 
 // Register
 app.post('/register', function(req, res, next) {

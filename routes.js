@@ -15,6 +15,9 @@ const cheerio = require("cheerio");
 var mysql = require('mysql');
 var randToken = require('rand-token');
 
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 config.connectionLimit = 10;
 var connection = mysql.createPool(config);
 
@@ -59,6 +62,8 @@ function getFriends(req, res) {
 // ----------------------------------------------------------
 // ---------------- GENERATE EMAIL --------------------------
 // ----------------------------------------------------------
+
+var emails = [];
 
 function scrapeSchedule(callback) {
 
@@ -167,7 +172,7 @@ function getCurrDate() {
 
   var year = date.getFullYear();
   var month = date.getMonth()+1;
-  var day = date.getDate()+3;
+  var day = date.getDate();
 
   if (day < 10) {
     day = '0' + day;
@@ -246,40 +251,9 @@ function teamImage(s) {
   return abbToName(s);
 }
 
-function generateEmail(req, res) {
+function generateGames(callback) {
 
-  var emailBody = `
-  <!doctype html>
-  <html>
-  <head>
-    <meta name="viewport" content="width=device-width" />
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Email Title</title>
-    <style>
-    </style>
-  </head>
-  <body class="">
-    <div style="text-align:center;">
-    <form method="GET" action="https://script.google.com/macros/s/AKfycbz-nSyZ_IWqauMcO3QJrvQRJm_nFDDtfw6LWD8ADF06NLQ4glLW/exec" style="display:table; margin:0 auto;">
-      <table style="border-collapse:collapse;">
-        <tbody>
-          <tr>
-            <th></th>
-            <th>Home</th>
-            <th>Away</th>
-            <th>Line</th>
-          </tr>
-  `;
-
-  var emailBottom = `
-            </tbody>
-          </table>
-          <button type="submit">Submit</button>
-        </form>
-        </div>
-      </body>
-    </html>
-  `;
+  var emailBody = "";
 
   scrapeSchedule(function (games) {
     for (var i = 0; i < games.length; i++) {
@@ -306,44 +280,44 @@ function generateEmail(req, res) {
       var gameId = 'game' + i;
 
       var gameHtml = `
-        <tr style="border-bottom: 1pt solid black;">
-          <td style="padding:20px;">
+        <tr style="border-bottom: 1pt solid gray;">
+          <td style="padding:20px; color:silver">
             ${gameTime} EST
           </td>
           <td style="padding:20px;">
-            <label for=${team1}>
-            <table style="text-align:center; border:1px solid black; border-radius:10px;">
-              <tr><td><input type="radio" id=${team1} name=${gameId} value=${team1}></td></tr>
+            <label for="${team1}">
+            <table class="teamTag-home" style="text-align:center; border-radius:10px; background-color:rgba(52,127,196,0.5);">
+              <tr><td><input type="radio" id="${team1}" name="${gameId}" value="${team1}"></td></tr>
               <tr>
                 <td>
 
-                  <img src="https://www.nba.com/assets/logos/teams/primary/web/${team1Image}.svg" width="50px" height="50px"></img>
+                  <img src="https://www.nba.com/assets/logos/teams/secondary/web/${team1Image}.png" width="50px" height="40px"></img>
 
                 </td>
               </tr>
-              <tr><td><span>${team1}</span></td></tr>
+              <tr><td><span style="color:white;">${team1}</span></td></tr>
             </table>
             </label>
           </td>
           <td style="padding:20px;">
-            <label for=${team2}>
-            <table style="text-align:center; border:1px solid black; border-radius:10px;">
-              <tr><td><input type="radio" id=${team2} name=${gameId} value=${team2}></td></tr>
+            <label for="${team2}">
+            <table class="teamTag-away" style="text-align:center; border-radius:10px; background-color:rgba(212,175,55,0.5);">
+              <tr><td><input type="radio" id="${team2}" name="${gameId}" value="${team2}"></td></tr>
               <tr>
                 <td>
 
-                  <img src="https://www.nba.com/assets/logos/teams/primary/web/${team2Image}.svg" width="50px" height="50px"></img>
+                  <img src="https://www.nba.com/assets/logos/teams/secondary/web/${team2Image}.png" width="50px" height="40px"></img>
 
                 </td>
               </tr>
-              <tr><td><span>${team2}</span></td></tr>
+              <tr><td><span style="color:white;">${team2}</span></td></tr>
             </table>
             </label>
           </td>
-          <td style="padding:20px; text-align:center; border-left: 1px solid black;">
-            ${favored}
+          <td style="padding:20px; text-align:center; border-left: 1px solid gray;">
+            <span style="color:white;">${favored}</span>
             <br>
-            ${spread}
+            <span style="color:white;">${spread}</span>
           </td>
         </tr>
         \n
@@ -352,14 +326,163 @@ function generateEmail(req, res) {
       emailBody += gameHtml;
 
     }
-
-    emailBody += emailBottom;
-    return res.send({status: 'success', email: emailBody});
+    callback(emailBody);
   });
 }
 
-// --------------------------------------------------------------
-// --------------------------------------------------------------
+function generateEmail(req, res) {
+  var yesterday = getDateYesterday();
+  var rankDate = (new Date(yesterday)).getTime();
+
+  generateGames(function(emailBody) {
+    var playersQuery = `
+      SELECT p.player_id, p.email, p.token, r.score, r.rank, r.payout
+      FROM Player p LEFT JOIN (SELECT * FROM Rank WHERE date = ?) r ON p.player_id = r.player;
+    `;
+
+    connection.query(playersQuery, [rankDate], function(err, rows, fields) {
+      if (err) {
+        console.log(err);
+        return res.send({status: 'fail', message: 'retrieve all players error'});
+      } else {
+        for (var i = 0; i < rows.length; i++) {
+          var currPlayer = rows[i];
+
+          var emailTop = `
+          <!doctype html>
+            <html lang="en">
+            <head>
+              <meta name="viewport" content="width=device-width" />
+              <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+              <title>Email Title</title>
+              <style>
+                .teamTag-home:hover {
+                  transition:0.2s;
+                  cursor:pointer;
+                  background-color:rgba(52,127,196,0.8) !important;
+                }
+                .teamTag-away:hover {
+                  transition:0.2s;
+                  cursor:pointer;
+                  background-color:rgba(212,175,55,0.8) !important;
+                }
+                .submitButton:hover {
+                  background-color:#34a6df !important;
+                  transition:0.2s;
+                  cursor:pointer;
+                }
+              </style>
+            </head>
+            <body class="">
+              <div style="text-align:center;">
+              <form method="GET" action="https://script.google.com/macros/s/AKfycbz-nSyZ_IWqauMcO3QJrvQRJm_nFDDtfw6LWD8ADF06NLQ4glLW/exec" style="display:table; margin:0 auto; background-color:#121212; border-radius:10px;">
+                <input type="hidden" name="email" value="${currPlayer.email}"/>
+                <input type="hidden" name="token" value="${currPlayer.token}"/>
+                <input type="hidden" name="id" value="${currPlayer.player_id}"/>
+                <div style="display:table; margin: 0 auto;">
+                  <table style="margin-top:20px;">
+                    <tbody>
+                      <tr>
+                        <td><img src="https://i.ibb.co/TgG3h46/logo-1.png" width="150px" height="150px"></img></td>
+                        <td>
+                          <img src="https://i.ibb.co/nRsWXhS/text.png" width="150px"></img>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <hr style="border-color:white;"/>
+              `;
+
+              var yesterdaySection = `
+                  <p style="font-size:20px; color:lightblue; letter-spacing:1px;">YESTERDAY</p>
+                  <table style="margin:0 auto; margin-bottom:50px;">
+                    <tr>
+                      <td style="color:white;">Rank</td>
+                      <td style="width:20px;"></td>
+                      <td style="color:white;">Payout*</td>
+                    </tr>
+                    <tr>
+                      <td style="border:1px solid white; width:100px; height:75px; border-radius:20px;">
+                        <div><span style="font-size:30px; color:#34a6df">${currPlayer.rank}</span><span style="color:white;">/${rows.length}</span></div>
+                      </td>
+                      <td></td>
+                      <td style="border:1px solid white; width:100px; height:75px; border-radius:20px;">
+                        <div><span style="font-size:20px; color:#34a6df">+ $${currPlayer.payout}</span></div>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="color:white;">*To redeem your payout, signup for <a href="/" style="color:gold;">Bluejay Pro</a>!</p>
+                  <hr style="border-color:white;"/>
+          `;
+
+          if (currPlayer.score) {
+            emailTop += yesterdaySection;
+          }
+
+          var emailTop2 = `
+            </div>
+            <p style="font-size:20px; color:lightblue; letter-spacing:1px;">TODAY</p>
+            <table style="border-collapse:collapse; margin-bottom:30px;">
+              <tbody>
+                <tr>
+                  <th></th>
+                  <th style="color:#347FC4;">Home</th>
+                  <th style="color:#d4af37;">Away</th>
+                  <th style="color:white;">Spread</th>
+                </tr>
+          `;
+
+          emailTop += emailTop2;
+
+          var emailBottom = `
+                  </tbody>
+                </table>
+                <button class="submitButton" type="submit" style="margin-bottom:30px; background-color:transparent; border: 2px solid #34a6df; padding:15px 32px; border-radius:10px; color:white; font-size:14px;">Submit</button>
+              </form>
+              <p style="color:gray">Trouble viewing this email? Click <a href="/">here</a> to bet online!</p>
+              <p style="color:gray"><a href="/">Unsubscribe</a> from Bluejay</p>
+              </div>
+            </body>
+          </html>
+          `;
+
+          var finalEmail = emailTop + emailBody + emailBottom;
+
+          var emailObject = {
+            to: currPlayer.email,
+            from: 'kevinwu97@gmail.com',
+            subject: 'Daily Summary',
+            text: 'text',
+            html: finalEmail
+          }
+
+          emails.push(emailObject);
+
+        }
+        return res.send({message: 'emails successfully created', email: emails[0].html});
+      }
+    })
+
+
+  })
+}
+
+
+// ----------------------------------------------------------
+// -------------------- SEND EMAIL ----------------------
+// ----------------------------------------------------------
+
+function sendEmail(req, res) {
+  sgMail.send(emails).then(() => {
+    console.log('emails sent successfully!');
+    return res.send({status: 'success'})
+  }).catch(error => {
+    console.log(error);
+    return res.send({status: 'fail', message: error});
+  });
+}
+
+// -----------------------------------------------------------
 
 // signup
 function emailSignup(req, res) {
@@ -482,7 +605,23 @@ function submitBet(req, res) {
 // ----------------------------------------------------------
 
 function getDateYesterday() {
-  return '2020-02-05';
+  var date = new Date();
+  date.setDate(date.getDate() - 1);
+
+  var year = date.getFullYear();
+  var month = date.getMonth()+1;
+  var day = date.getDate();
+
+  if (day < 10) {
+    day = '0' + day;
+  }
+  if (month < 10) {
+    month = '0' + month;
+  }
+
+  var formattedDate = year + "-" + month + "-" + day;
+
+  return formattedDate;
 }
 
 
@@ -573,7 +712,8 @@ function calculateRank(req, res) {
         playerList.forEach(function(player) {
           var pScore = {
             id: player.player_id,
-            score: 0.0
+            score: 0.0,
+            payout: 0.0
           };
 
           if (!(player.slip)) {
@@ -610,6 +750,10 @@ function calculateRank(req, res) {
           })
 
           pScore.score = total;
+
+          var baseline = 3.0 * results.length;
+
+          pScore.payout = Math.max(0.0, (total - baseline) / baseline);
           scores.push(pScore);
 
         });
@@ -629,11 +773,12 @@ function calculateRank(req, res) {
           currVal[1] = rankDate;
           currVal[2] = currScore.score;
           currVal[3] = i + 1;
+          currVal[4] = currScore.payout
 
           values.push(currVal);
         }
 
-        var insertQuery = "INSERT INTO `Rank` (player, date, score, rank) VALUES ?";
+        var insertQuery = "INSERT INTO `Rank` (player, date, score, rank, payout) VALUES ?";
 
         // run the query on the db
         connection.query(insertQuery, [values], function(err1, rows1, fields1) {
@@ -652,6 +797,74 @@ function calculateRank(req, res) {
 }
 
 
+//unsubscribe
+function unsubscribe(req, res) {
+  var email = req.body.email;
+  var token = req.body.token;
+
+  var deleteQuery = `
+    DELETE FROM Player
+    WHERE email = ? AND token = ?
+  `
+
+  connection.query(deleteQuery, [email, token], function(err, rows, fields) {
+    if (err) {
+      console.log(err);
+      return res.send({status: 'fail', message: 'delete failed'})
+    } else {
+      return res.send({status: 'success'});
+    }
+  })
+}
+
+
+// check if email and token are valid
+function validateUser(req, res) {
+  var email = req.params.email;
+  var token = req.params.token;
+
+  var checkQuery = `
+    SELECT *
+    FROM Player
+    WHERE email = ? AND token = ?
+  `
+
+  connection.query(checkQuery, [email, token], function(err, rows, fields) {
+    if (err) {
+      console.log(err);
+      return res.send({status: 'fail', message: 'query failed'})
+    } else {
+      if (!rows.length) {
+        return res.send({status: 'fail', message: 'invalid combination'})
+      } else {
+        res.send({status: 'success'})
+      }
+    }
+  })
+}
+
+// get game data from database
+function getGames(req, res) {
+  var currDate = getCurrDate();
+  var league = 'nba';
+
+  var gamesQuery = `
+    SELECT *
+    FROM Games
+    WHERE date = ? AND league = ?
+  `
+
+  connection.query(gamesQuery, [currDate, league], function(err, rows, fields) {
+    if (err) {
+      return res.send({status: 'fail', message: 'error retrieving games'})
+    } else {
+      return res.send({status: 'success', games: JSON.parse(rows[0].games)});
+    }
+  })
+}
+
+
+
 // The exported functions, which can be accessed in index.js.
 module.exports = {
   getAllPeople: getAllPeople,
@@ -659,5 +872,9 @@ module.exports = {
   generateEmail: generateEmail,
   emailSignup: emailSignup,
   submitBet: submitBet,
-  calculateRank: calculateRank
+  calculateRank: calculateRank,
+  validateUser: validateUser,
+  unsubscribe: unsubscribe,
+  getGames: getGames,
+  sendEmail: sendEmail
 }

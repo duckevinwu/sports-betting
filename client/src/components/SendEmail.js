@@ -48,7 +48,16 @@ export default class SendEmail extends React.Component {
   }
 
   sendEmail() {
-
+    fetch("/api/sendemail",
+    {
+      method: "GET"
+    }).then(res => {
+      return res.json();
+    }, err => {
+      console.log(err);
+    }).then(data => {
+      console.log(data)
+    });
   }
 
   render() {

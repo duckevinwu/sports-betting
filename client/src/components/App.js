@@ -12,6 +12,8 @@ import AdminRoute from './AdminRoute';
 import SendEmail from './SendEmail';
 import LandingPage from './LandingPage';
 import SubmitBet from './SubmitBet';
+import ValidatedRoute from './ValidatedRoute';
+import BetOnline from './BetOnline';
 
 export default class App extends React.Component {
 
@@ -36,9 +38,9 @@ export default class App extends React.Component {
 						/>
 						<Route
 							exact
-							path="/register"
-							render={() => (
-								<RegisterWrapper />
+							path="/betonline/:email/:token/:id"
+							render={(props) => (
+								<ValidatedRoute {...props} success={<BetOnline {...props}/>} fail={<BetOnline {...props}/>} />
 							)}
 						/>
 						<Route
