@@ -64,6 +64,9 @@ app.get('/api/getgames', routes.getGames);
 // ----------------- send all emails ------------------------
 app.get('/api/sendemail', routes.sendEmail);
 
+// ----------------- get player info yesterday --------------
+app.get('/api/yesterdayrank/:id', routes.getRankYesterday)
+
 
 // Register
 app.post('/register', function(req, res, next) {

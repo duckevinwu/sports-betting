@@ -1,0 +1,166 @@
+@import url('https://fonts.googleapis.com/css?family=Sora&display=swap');
+
+
+.form-container {
+  text-align: center;
+  background-color: #121212;
+  height: 100%;
+  min-height: 100vh;
+  font-family: "Sora";
+}
+
+.logo-img {
+  width: 150px;
+}
+
+.logo-table-wrapper {
+  display:table;
+  margin: 0 auto;
+}
+
+.logo-table {
+  margin-top:20px;
+}
+
+.bet-form {
+  display:table;
+  margin:0 auto;
+  background-color:#121212;
+  border-radius:10px;
+  padding-top: 50px;
+}
+
+.divider {
+  border-color: white;
+}
+
+.form-title-text {
+  font-size:20px;
+  color:lightblue;
+  letter-spacing:1px;
+}
+
+.yesterday-table {
+  margin:0 auto;
+  margin-bottom:50px;
+}
+
+.white-text {
+  color: white;
+}
+
+.spacer {
+  width: 20px;
+}
+
+.stat-wrapper {
+  border:1px solid white;
+  width:100px;
+  height:75px;
+  border-radius:20px;
+}
+
+.rank-text {
+  font-size:30px;
+  color:#34a6df;
+}
+
+.payout-text {
+  font-size:20px;
+  color:#34a6df;
+}
+
+.gold-text {
+  color: gold;
+}
+
+.games-table {
+  border-collapse:collapse;
+  margin-bottom:30px;
+}
+
+.blue-text {
+  color:#347FC4;
+}
+
+.game-row {
+  border-bottom: 1pt solid gray;
+}
+
+.time-box {
+  padding:20px;
+  color:silver;
+}
+
+.game-box {
+  padding:20px;
+}
+
+.home-box {
+  text-align:center;
+  border-radius:10px;
+  background-color:rgba(52,127,196,0.5);
+  height:100px;
+  opacity: 0.6;
+}
+
+.team-logo {
+  width: 50px;
+  height: 40px;
+}
+
+.away-box {
+  text-align:center;
+  border-radius:10px;
+  background-color:rgba(212,175,55,0.5);
+  height: 100px;
+  opacity: 0.6;
+}
+
+.spread-box {
+  padding:20px;
+  text-align:center; border-left: 1px solid gray;
+}
+
+.teamTag-home:hover {
+  transition:0.2s;
+  cursor:pointer;
+  background-color:rgba(52,127,196,0.8) !important;
+  opacity: 1;
+}
+.teamTag-away:hover {
+  transition:0.2s;
+  cursor:pointer;
+  background-color:rgba(212,175,55,0.8) !important;
+  opacity: 1;
+}
+.form-submit-button:hover {
+  background-color:#34a6df !important;
+  transition:0.2s;
+  cursor:pointer;
+}
+
+.radio-button {
+  display: none;
+}
+
+.home-radio:checked ~ .teamTag-home {
+  background-color:rgba(52,127,196,0.8) !important;
+  opacity: 1;
+}
+
+.away-radio:checked ~ .teamTag-away {
+  background-color:rgba(212,175,55,0.8) !important;
+  opacity: 1;
+}
+
+.form-submit-button {
+  margin-bottom:30px;
+  background-color:transparent;
+  border: 2px solid #34a6df;
+  padding:15px 32px;
+  border-radius:10px;
+  color:white;
+  font-size:14px;
+  font-family: "Sora";
+}
