@@ -467,8 +467,11 @@ function generateEmail(req, res) {
 
           var emailObject = {
             to: currPlayer.email,
-            from: 'kevinwu97@gmail.com',
-            subject: 'Daily Summary',
+            from: {
+              email: 'kevinwu97@gmail.com',
+              name: 'Bluejay'
+            },
+            subject: '[Bluejay] Daily Summary and Slip',
             text: 'text',
             html: finalEmail
           }
