@@ -3,6 +3,7 @@ import '../style/BetOnline.css';
 import GameRow from './GameRow';
 import Preloader from './Preloader';
 import PostSubmit from './PostSubmit';
+import Navbar from './Navbar';
 
 export default class BetOnline extends React.Component {
   constructor(props) {
@@ -180,6 +181,7 @@ export default class BetOnline extends React.Component {
 
         return (
           <div className="form-container">
+          <Navbar/>
             <form onSubmit={this.submitForm} className="bet-form">
               <input type="hidden" name="email" value={this.state.email}/>
               <input type="hidden" name="token" value={this.state.token}/>
