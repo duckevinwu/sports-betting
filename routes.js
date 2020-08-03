@@ -264,8 +264,8 @@ function generateGames(callback) {
       <tbody>
         <tr>
           <th></th>
-          <th style="color:#347FC4;">Home</th>
-          <th style="color:#d4af37;">Away</th>
+          <th style="color:#347FC4;">Away</th>
+          <th style="color:#d4af37;">Home</th>
           <th style="color:white;">Spread</th>
         </tr>
   `;

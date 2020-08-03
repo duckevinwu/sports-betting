@@ -136,8 +136,8 @@ export default class BetOnline extends React.Component {
                 <tbody>
                   <tr>
                     <th></th>
-                    <th className="blue-text">Home</th>
-                    <th className="gold-text">Away</th>
+                    <th className="blue-text">Away</th>
+                    <th className="gold-text">Home</th>
                     <th className="white-text">Spread</th>
                   </tr>
                   {this.state.games}
