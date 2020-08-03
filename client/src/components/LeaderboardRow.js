@@ -21,7 +21,7 @@ export default class LeaderboardRow extends React.Component {
     return (
       <div className="leaderboard-row">
         <div className="rank">
-          <p className="rank-text">{this.state.playerInfo.rank}</p>
+          <p className="rank-text-row">{this.state.playerInfo.rank}</p>
         </div>
         <div className="name">
           <p className="name-text">{this.state.playerInfo.nickname}</p>

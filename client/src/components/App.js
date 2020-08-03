@@ -15,6 +15,9 @@ import SubmitBet from './SubmitBet';
 import ValidatedRoute from './ValidatedRoute';
 import BetOnline from './BetOnline';
 import Leaderboard from './Leaderboard';
+import Unsubscribe from './Unsubscribe';
+import UnderConstruction from './UnderConstruction';
+import PostSubmit from './PostSubmit';
 
 export default class App extends React.Component {
 
@@ -41,7 +44,7 @@ export default class App extends React.Component {
 							exact
 							path="/betonline/:email/:token/:id"
 							render={(props) => (
-								<ValidatedRoute {...props} success={<BetOnline {...props}/>} fail={<BetOnline {...props}/>} />
+								<ValidatedRoute {...props} success={<BetOnline {...props}/>} fail={<PostSubmit status="fail"/>} />
 							)}
 						/>
 						<Route
@@ -55,7 +58,7 @@ export default class App extends React.Component {
 							exact
 							path="/sendemail"
 							render={() => (
-								<AdminRoute success={<SendEmail/>} fail={<SendEmail/>}/>
+								<AdminRoute success={<SendEmail/>} fail={<PostSubmit status="fail"/>}/>
 							)}
 						/>
 						<Route
@@ -70,6 +73,20 @@ export default class App extends React.Component {
 							path="/leaderboard"
 							render={() => (
 								<Leaderboard />
+							)}
+						/>
+						<Route
+							exact
+							path="/unsubscribe/:email/:token"
+							render={(props) => (
+								<ValidatedRoute {...props} success={<Unsubscribe {...props}/>} fail={<PostSubmit status="fail"/>} />
+							)}
+						/>
+						<Route
+							exact
+							path="/pro"
+							render={() => (
+								<UnderConstruction />
 							)}
 						/>
 					</Switch>

@@ -10,6 +10,8 @@ var config = {
   database: process.env.DATABASE
 }
 
+var url = 'https://pacific-wave-67038.herokuapp.com/';
+
 const axios = require("axios");
 const cheerio = require("cheerio");
 var mysql = require('mysql');
@@ -434,7 +436,7 @@ function generateEmail(req, res) {
                       </td>
                     </tr>
                   </table>
-                  <p style="color:white;">*To redeem your payout, signup for <a href="/" style="color:gold;">Bluejay Pro</a>!</p>
+                  <p style="color:white;">*To redeem your payout, signup for <a href="${url + 'pro'}" style="color:gold;">Bluejay Pro</a>!</p>
                   <hr style="border-color:white;"/>
           `;
 
@@ -449,10 +451,13 @@ function generateEmail(req, res) {
 
           emailTop += emailTop2;
 
+          var betonlineUrl = url + 'betonline/' + currPlayer.email + '/' + currPlayer.token + '/' + currPlayer.player_id;
+          var unsubscribeUrl = url + 'unsubscribe/' + currPlayer.email + '/' + currPlayer.token;
+
           var emailBottom = `
               </form>
-              <p style="color:gray">Trouble viewing this email? Click <a href="/">here</a> to bet online!</p>
-              <p style="color:gray"><a href="/">Unsubscribe</a> from Bluejay</p>
+              <p style="color:gray">Trouble viewing this email? Click <a href="${betonlineUrl}">here</a> to bet online!</p>
+              <p style="color:gray"><a href="${unsubscribeUrl}">Unsubscribe</a> from Bluejay</p>
               </div>
             </body>
           </html>
@@ -501,6 +506,12 @@ function emailSignup(req, res) {
   var email = req.body.email;
   var nickname = req.body.nickname;
 
+  var pattern = new RegExp('[A-Za-z0-9_]{1,20}');
+
+  if (!pattern.test(nickname)) {
+    return res.send({status: 'fail', message: "Leaderboard name must be between 1 and 20 alphanumeric characters and/or underscores"})
+  }
+
   // check if user with that email exists
   var existsQuery = `
     SELECT *
@@ -510,11 +521,11 @@ function emailSignup(req, res) {
   connection.query(existsQuery, [email],  function(err, rows, fields) {
     if (err) {
       console.log(err);
-      return;
+      return res.send({status: 'fail', message: 'An error occurred. Please try again.'});
     }
     if (rows.length) {
       // user already exists
-      return res.send({status: 'fail', message: 'user already exists'});
+      return res.send({status: 'fail', message: 'Email already in use'});
     } else {
       var token = randToken.generate(16);
 
@@ -523,7 +534,10 @@ function emailSignup(req, res) {
         VALUES (?, ?, ?);
       `;
       connection.query(query, [email, token, nickname], function(err, rows, fields) {
-        if (err) console.log(err);
+        if (err) {
+          console.log(err);
+          return res.send({status: 'fail', message: 'An error occurred. Please try again.'})
+        }
         else {
           return res.send({status: 'success'})
         }
@@ -644,7 +658,7 @@ function getYesterdayMilli() {
   var month = date.getMonth();
   var day = date.getDate();
 
-  var yesterday = (new Date(year, month, day)).getTime();
+  var yesterday = (new Date(Date.UTC(year, month, day))).getTime();
   return yesterday;
 }
 
@@ -842,7 +856,12 @@ function unsubscribe(req, res) {
       console.log(err);
       return res.send({status: 'fail', message: 'delete failed'})
     } else {
-      return res.send({status: 'success'});
+      if (rows.affectedRows > 0) {
+        return res.send({status: 'success'});
+      } else {
+        return res.send({status: 'fail'})
+      }
+
     }
   })
 }

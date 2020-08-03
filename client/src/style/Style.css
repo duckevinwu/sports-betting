@@ -45,6 +45,29 @@ body {
   margin-top: 20px;
   padding-top: 20px;
   text-align: center;
+  height: 200px;
+}
+
+.load-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  margin-top: 20px;
+}
+
+.success-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  margin-top: 20px;
+}
+
+.success-text {
+  color: white;
+  font-family: "Sora";
 }
 
 .landing-input {
@@ -341,7 +364,7 @@ td {
   justify-content: center;
 }
 
-.rank-text {
+.rank-text-row {
   color: white;
   font-family: "Sora";
   margin: 0;
@@ -488,4 +511,20 @@ td {
 	100%{
 		transform:rotate(360deg);
 	}
+}
+
+.red-text {
+  color: red;
+  font-family: "Sora";
+  size: 14px;
+}
+
+/* Unsubscribe */
+.unsubscribe-page {
+  background-color: #121212;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
