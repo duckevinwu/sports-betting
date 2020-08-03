@@ -1,13 +1,14 @@
 import React from 'react';
 import { withRouter } from 'react-router-dom';
-
+import Preloader from './Preloader';
 
 class ValidatedRoute extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      pageData: ""
+      pageData: "",
+      isLoaded: false
     }
   }
 
@@ -41,11 +42,20 @@ class ValidatedRoute extends React.Component {
           pageData: failPage
         })
       }
+
+      this.setState({
+        isLoaded: true
+      })
+
 		});
   }
 
   render() {
-    return this.state.pageData;
+    if (this.state.isLoaded) {
+      return this.state.pageData;
+    } else {
+      return (<Preloader/>);
+    }
   }
 }
 

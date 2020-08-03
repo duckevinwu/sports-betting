@@ -148,6 +148,36 @@ export default class BetOnline extends React.Component {
           );
         }
 
+        var yesterday = (<div></div>)
+
+        if (this.state.player) {
+          yesterday = (
+            <div>
+              <hr className="divider"/>
+              <p className="form-title-text">YESTERDAY</p>
+              <table className="yesterday-table">
+                <tbody>
+                  <tr>
+                    <td className="white-text">Rank</td>
+                    <td className="spacer"></td>
+                    <td className="white-text">Payout*</td>
+                  </tr>
+                  <tr>
+                    <td className="stat-wrapper">
+                      <div><span className="rank-text">{this.state.player.rank}</span><span className="white-text">/{this.state.total}</span></div>
+                    </td>
+                    <td></td>
+                    <td className="stat-wrapper">
+                      <div><span className="payout-text">+ ${(this.state.player.payout + this.state.player.f2p).toFixed(2)}</span></div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <p className="white-text">*To redeem your payout, signup for <a href="/" className="gold-text">Bluejay Pro</a>!</p>
+            </div>
+          );
+        }
+
         return (
           <div className="form-container">
             <form onSubmit={this.submitForm} className="bet-form">
@@ -164,27 +194,7 @@ export default class BetOnline extends React.Component {
                     </tr>
                   </tbody>
                 </table>
-                <hr className="divider"/>
-                <p className="form-title-text">YESTERDAY</p>
-                <table className="yesterday-table">
-                  <tbody>
-                    <tr>
-                      <td className="white-text">Rank</td>
-                      <td className="spacer"></td>
-                      <td className="white-text">Payout*</td>
-                    </tr>
-                    <tr>
-                      <td className="stat-wrapper">
-                        <div><span className="rank-text">{this.state.player.rank}</span><span className="white-text">/{this.state.total}</span></div>
-                      </td>
-                      <td></td>
-                      <td className="stat-wrapper">
-                        <div><span className="payout-text">+ ${(this.state.player.payout + this.state.player.f2p).toFixed(2)}</span></div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-                <p className="white-text">*To redeem your payout, signup for <a href="/" className="gold-text">Bluejay Pro</a>!</p>
+                {yesterday}
                 <hr className="divider"/>
               </div>
 
