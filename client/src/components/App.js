@@ -14,6 +14,7 @@ import LandingPage from './LandingPage';
 import SubmitBet from './SubmitBet';
 import ValidatedRoute from './ValidatedRoute';
 import BetOnline from './BetOnline';
+import Leaderboard from './Leaderboard';
 
 export default class App extends React.Component {
 
@@ -62,6 +63,13 @@ export default class App extends React.Component {
 							path="/submitbet"
 							render={() => (
 								<SubmitBet />
+							)}
+						/>
+						<Route
+							exact
+							path="/leaderboard"
+							render={() => (
+								<Leaderboard />
 							)}
 						/>
 					</Switch>

@@ -67,6 +67,9 @@ app.get('/api/sendemail', routes.sendEmail);
 // ----------------- get player info yesterday --------------
 app.get('/api/yesterdayrank/:id', routes.getRankYesterday)
 
+// ---------------- get leaderboard --------------------------
+app.get('/api/leaderboard', routes.getLeaderboard);
+
 
 // Register
 app.post('/register', function(req, res, next) {

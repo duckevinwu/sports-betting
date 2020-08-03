@@ -59,7 +59,11 @@ export default class BetOnline extends React.Component {
           gamesToday = true;
 
           var handleOptionChange = (gameId, selected) => {
-            this.state.submitObj[gameId] = selected;
+            var submitObjTemp = this.state.submitObj;
+            submitObjTemp[gameId] = selected;
+            this.setState({
+              submitObj: submitObjTemp
+            })
           }
 
           var gameList = gamesObj.games;
@@ -82,8 +86,10 @@ export default class BetOnline extends React.Component {
 
   submitForm(e) {
     e.preventDefault();
-    this.state.submitObj['id'] = this.state.id;
-    this.state.submitObj['email'] = this.state.email;
+
+    var submitObj = this.state.submitObj;
+    submitObj['id'] = this.state.id;
+    submitObj['email'] = this.state.email;
 
     fetch("/api/submitbet", {
       method: "post",
@@ -93,7 +99,7 @@ export default class BetOnline extends React.Component {
       },
       //make sure to serialize your JSON body
       body: JSON.stringify({
-        params: this.state.submitObj
+        params: submitObj
       })
     })
     .then(res => {
@@ -102,10 +108,15 @@ export default class BetOnline extends React.Component {
 			console.log(err);
 		})
     .then(data => {
-      console.log(data);
-      this.setState({
-        success: true
-      })
+      if (data.status === 'success') {
+        this.setState({
+          showPage: 2
+        })
+      } else {
+        this.setState({
+          showPage: 3
+        })
+      }
     });
   }
 
@@ -117,8 +128,6 @@ export default class BetOnline extends React.Component {
       if (this.state.showPage === 1) {
 
         var todayTable = this.state.games;
-
-        console.log(this.state);
 
         if (this.state.gamesToday) {
           todayTable = (

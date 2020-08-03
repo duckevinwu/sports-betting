@@ -355,8 +355,7 @@ function generateGames(callback) {
 }
 
 function generateEmail(req, res) {
-  var yesterday = getDateYesterday();
-  var rankDate = (new Date(yesterday)).getTime();
+  var rankDate = getYesterdayMilli();
 
   generateGames(function(emailBody) {
     var playersQuery = `
@@ -637,6 +636,18 @@ function getDateYesterday() {
   return formattedDate;
 }
 
+function getYesterdayMilli() {
+  var date = new Date();
+  date.setDate(date.getDate() - 1);
+
+  var year = date.getFullYear();
+  var month = date.getMonth();
+  var day = date.getDate();
+
+  var yesterday = (new Date(year, month, day)).getTime();
+  return yesterday;
+}
+
 
 
 function scrapeResults(callback) {
@@ -775,7 +786,7 @@ function calculateRank(req, res) {
         scores.sort(function(a, b){return b.score - a.score});
 
         // iterate through scores array and generate query
-        var rankDate = (new Date(yesterday)).getTime();
+        var rankDate = getYesterdayMilli();
         var values = [];
 
         for (var i = 0; i < scores.length; i++) {
@@ -889,8 +900,7 @@ function getGames(req, res) {
 
 // get user data from yesterday
 function getRankYesterday(req, res) {
-  var yesterday = getDateYesterday();
-  var rankDate = (new Date(yesterday)).getTime();
+  var rankDate = getYesterdayMilli();
 
   var playerId = req.params.id;
 
@@ -933,6 +943,30 @@ function getRankYesterday(req, res) {
   })
 }
 
+// get leaderboard from yesterday
+function getLeaderboard(req, res) {
+  var rankDate = getYesterdayMilli();
+
+  var query = `
+    SELECT p.nickname, r.rank, r.score
+    FROM (SELECT * FROM Rank WHERE date = ?) r JOIN Player p ON r.player = p.player_id
+    ORDER BY r.rank ASC
+  `;
+
+  connection.query(query, [rankDate], function(err, rows, fields) {
+    if (err) {
+      console.log(err);
+      return res.send({status: 'fail', message: 'error retrieving leadboard', date: rankDate})
+    } else {
+      if (rows.length) {
+        return res.send({status: 'success', leaderboard: rows, date: rankDate})
+      } else {
+        return res.send({status: 'fail', message: 'no rows', date: rankDate})
+      }
+    }
+  })
+}
+
 
 
 // The exported functions, which can be accessed in index.js.
@@ -947,5 +981,6 @@ module.exports = {
   unsubscribe: unsubscribe,
   getGames: getGames,
   sendEmail: sendEmail,
-  getRankYesterday: getRankYesterday
+  getRankYesterday: getRankYesterday,
+  getLeaderboard: getLeaderboard
 }

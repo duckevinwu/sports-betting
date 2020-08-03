@@ -1,4 +1,6 @@
 import React from 'react';
+import Preloader from './Preloader';
+import PostSubmit from './PostSubmit';
 import { withRouter } from 'react-router-dom';
 
 class SubmitBet extends React.Component {
@@ -7,18 +9,43 @@ class SubmitBet extends React.Component {
     super(props);
 
     this.state = {
-      params: {}
+      isLoaded: false,
+      success: false
     }
-
-    this.submitTest = this.submitTest.bind(this);
 
   }
 
   componentDidMount() {
     var params = this.parseQueryString(this.props.location.search);
-    this.setState({
-      params: params
+
+    fetch("/api/submitbet", {
+      method: "post",
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      //make sure to serialize your JSON body
+      body: JSON.stringify({
+        params: params
+      })
     })
+    .then(res => {
+			return res.json();
+		}, err => {
+			console.log(err);
+		})
+    .then(data => {
+      console.log(data);
+      if (data.status === 'success') {
+        this.setState({
+          success: true
+        })
+      }
+
+      this.setState({
+        isLoaded: true
+      })
+    });
   }
 
   parseQueryString(queryString) {
@@ -34,34 +61,17 @@ class SubmitBet extends React.Component {
     return result;
   }
 
-  submitTest() {
-    fetch("/api/submitbet", {
-      method: "post",
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      //make sure to serialize your JSON body
-      body: JSON.stringify({
-        params: this.state.params
-      })
-    })
-    .then(res => {
-			return res.json();
-		}, err => {
-			console.log(err);
-		})
-    .then(data => {
-      console.log(data);
-    });
-  }
 
   render() {
-    return (
-      <div>
-        <button onClick={this.submitTest}>Submit</button>
-      </div>
-    )
+    if (!this.state.isLoaded) {
+      return (<Preloader/>);
+    } else {
+      if (this.state.success) {
+        return (<PostSubmit status="success"/>)
+      } else {
+        return (<PostSubmit status="fail"/>)
+      }
+    }
   }
 
 }
