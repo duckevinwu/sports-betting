@@ -205,13 +205,61 @@ input:-webkit-autofill:active {
 }
 
 .lp-grid {
-  margin-left: 100px;
-  margin-right: 100px;
+  margin-left: 10%;
+  margin-right: 10%;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: 1fr 1fr 1fr;
   grid-auto-rows: 1fr;
   grid-gap: 1rem;
   padding-bottom: 10%;
+}
+
+@media only screen and (max-width: 1200px) {
+  .lp-grid {
+    margin-left: 7%;
+    margin-right: 7%;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media only screen and (max-width: 1000px) {
+  .text {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .inside-text {
+    margin-left: 0;
+  }
+
+  .links {
+    width: 100%;
+  }
+
+  .image {
+    display: none;
+  }
+
+  .hiw {
+    background-image: linear-gradient(#121212, #121212);
+  }
+}
+
+
+@media only screen and (max-width: 650px) {
+  .links {
+    margin-left: 5px;
+  }
+
+  .nav-link {
+    padding-right: 5px;
+  }
+
+  .lp-grid {
+    margin-left: 5%;
+    margin-right: 5%;
+    grid-template-columns: 1fr;
+  }
 }
 
 
